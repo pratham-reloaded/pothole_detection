@@ -52,7 +52,7 @@ class imageSubscriber(Node):
         # )
 
         self.timer = self.create_timer(
-            0.1, self.timer_callback  # publishing every 0.1 second
+            0.01, self.timer_callback  # publishing every 0.1 second
         )
 
         self.contour_depth = np.zeros((720, 1280), np.uint16)
@@ -60,7 +60,7 @@ class imageSubscriber(Node):
 
         self.depth_image = np.zeros((720, 1280), np.uint16)
         # self.rgbd_image = None
-
+        self.camera_info = CameraInfo()
         self.pcd = None
 
     def info_callback(self, data):
@@ -70,15 +70,13 @@ class imageSubscriber(Node):
         # self.camera_info_pub.publish(self.camera_info)
 
     def timer_callback(self):
-        try:
-            depth_image = self.br.cv2_to_imgmsg(self.contour_depth)
-            time = self.get_clock.now().to_msg()
-            depth_image.header.stamp = time
-            self.camera_info.header.stamp = time
-            self.depth_publisher.publish(depth_image)
-            self.camera_info_pub.publish(self.camera_info)
-        except:
-            pass
+        depth_image = self.br.cv2_to_imgmsg(self.contour_depth)
+        time = self.get_clock().now().to_msg()
+        depth_image.header.stamp = time
+        depth_image.header.frame_id = 'camera_link'
+        self.camera_info.header.stamp = time
+        self.depth_publisher.publish(depth_image)
+        self.camera_info_pub.publish(self.camera_info)
         # self.new_depth_publisher.publish(
         #     self.br.cv2_to_imgmsg(self.contour_depth)
         # )
@@ -243,10 +241,8 @@ class imageSubscriber(Node):
 
         cv2.imshow('potholes', self.potholes)
         cv2.waitKey(1)
-        # self.depth_publisher.publish(
-        #     self.br.cv2_to_imgmsg(self.contour_depth)
-        # )
-        # # self.processing(self.color_image)
+        # self.depth_publisher.publish(self.br.cv2_to_imgmsg(self.contour_depth))
+        # self.processing(self.color_image)
 
     # ------------------------------------------- Point Cloud Processing --------------------------------
 
