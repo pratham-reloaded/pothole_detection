@@ -22,7 +22,7 @@ def generate_launch_description():
             #
             # launch plugin through rclcpp_components container
             launch_ros.actions.ComposableNodeContainer(
-                name='container',
+                name='pothole',
                 namespace='',
                 package='rclcpp_components',
                 executable='component_container',
@@ -33,7 +33,28 @@ def generate_launch_description():
                         plugin='depth_image_proc::PointCloudXyzNode',
                         name='point_cloud_xyz_node',
                         remappings=[
-                            ('image_rect', '/output_depth'),
+                            ('image_rect', '/pothole_depth'),
+                            ('camera_info', '/cov_info'),
+                            ('image', '/camera/color/image_raw'),
+                        ],
+                    ),
+                ],
+                output='screen',
+            ),
+            # launch plugin through rclcpp_components container
+            launch_ros.actions.ComposableNodeContainer(
+                name='lane',
+                namespace='',
+                package='rclcpp_components',
+                executable='component_container',
+                composable_node_descriptions=[
+                    # Driver itself
+                    launch_ros.descriptions.ComposableNode(
+                        package='depth_image_proc',
+                        plugin='depth_image_proc::PointCloudXyzNode',
+                        name='point_cloud_xyz_node',
+                        remappings=[
+                            ('image_rect', '/lane_depth'),
                             ('camera_info', '/cov_info'),
                             ('image', '/camera/color/image_raw'),
                         ],
