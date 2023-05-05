@@ -22,16 +22,16 @@ class imageSubscriber(Node):
         # self.pothole_depth = np.zeros([720,1280], np.uint16)
 
         self.color_sub = self.create_subscription(
-            Image, '/camera/color/image_raw', self.color_callback, 10
-        )
+            Image, '/intel_realsense_r200_depth/image_raw', self.color_callback, 10
+        )   # '/camera/color/image_raw'
 
         self.depth_sub = self.create_subscription(
-            Image, 'camera/depth/image_rect_raw', self.depth_callback, 10
-        )
+            Image, '/intel_realsense_r200_depth/depth/image_raw', self.depth_callback, 10
+        )   # 'camera/depth/image_rect_raw'
 
         self.info_sub = self.create_subscription(
-            CameraInfo, '/camera/depth/camera_info', self.info_callback, 10
-        )
+            CameraInfo, '/intel_realsense_r200_depth/camera_info', self.info_callback, 10
+        )   # '/camera/depth/camera_info'
 
         self.br = CvBridge()
         self.camera_info_pub = self.create_publisher(
@@ -58,11 +58,11 @@ class imageSubscriber(Node):
 
         # self.new_output_depth_image = np.zeros((720,1280), np.uint16)
 
-        self.depth_image = np.zeros((720, 1280), np.uint16)
+        self.depth_image = np.zeros((720,1280), np.uint16)
         # self.rgbd_image = None
         self.camera_info = CameraInfo()
 
-        self.pothole_depth = np.zeros((720, 1280), np.uint16)
+        self.pothole_depth = np.zeros((720,1280), np.uint16)
         self.lanes_2 = np.zeros((720,1280), dtype="uint8")
         self.lane_depth = np.zeros((720,1280), np.uint16)
 
@@ -149,7 +149,7 @@ class imageSubscriber(Node):
         # --------------------------------- rectangular region of interest ------------------------------------------------
 
         self.mask = np.zeros(self.hsv_color_mask.shape[:2], dtype='uint8')
-        cv2.rectangle(self.mask, (0, 300), (1280, 720), (255, 0, 0), -1)
+        cv2.rectangle(self.mask, (0, 500), (1280,720), (255, 0, 0), -1)
 
         self.masked_image = cv2.bitwise_and(
             self.hsv_color_mask, self.mask
@@ -209,12 +209,12 @@ class imageSubscriber(Node):
         # if len(self.approx) >= 8 :
         #     cv2.drawContours(self.image_copy, [self.approx], 0, (255, 0, 0), 5)
 
-        # self.pothole_depth = np.zeros((240,320))      # Defined in the class constructor, hence not required here
+        # self.pothole_depth = np.zeros((720,1280))      # Defined in the class constructor, hence not required here
 
         # ----------------------------------- bitwise_and on depth image with pothole mask ---------------------------
 
-        self.potholes = np.zeros((720, 1280), dtype='uint8')
-        self.pothole_depth = np.zeros((720, 1280), np.uint16)
+        self.potholes = np.zeros((720,1280), dtype='uint8')
+        self.pothole_depth = np.zeros((720,1280), np.uint16)
         self.lanes_2 = np.zeros((720,1280), dtype="uint8")
         self.lane_depth = np.zeros((720,1280), np.uint16)
 
@@ -258,7 +258,7 @@ class imageSubscriber(Node):
         # cv2.imshow("contours_2", self.contours_2)
         for contour in self.contours_2:
             self.area = cv2.contourArea(contour)
-            if self.area > 0.5:
+            if (self.area > 10 and self.area < 10000):
                 print(self.area, "\n")
                 self.lanes_2 = cv2.fillPoly(self.lanes_2, pts = [contour], color =(255,255,255))
         

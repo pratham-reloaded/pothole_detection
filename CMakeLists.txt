@@ -24,7 +24,7 @@ install(
 )
 
 install(PROGRAMS
-  src/pothole_detection.py src/depth_to_cloud.py
+  src/pothole_detection.py
   DESTINATION lib/${PROJECT_NAME}
 )
 
