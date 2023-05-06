@@ -41,32 +41,30 @@ def generate_launch_description():
                     ),
                 ],
                 output='screen',
+                # launch plugin through rclcpp_components container
+                name='lane',
+                namespace='',
+                package='rclcpp_components',
+                executable='component_container',
+                composable_node_descriptions=[
+                    # Driver itself
+                    launch_ros.descriptions.ComposableNode(
+                        package='depth_image_proc',
+                        plugin='depth_image_proc::PointCloudXyzNode',
+                        name='point_cloud_xyz_node',
+                        remappings=[
+                            ('image_rect', '/lane_depth'),
+                            ('camera_info', '/cov_info'),
+                            ('image', '/camera/color/image_raw'),
+                            ('/points', '/lane_points'),
+                        ],
+                    ),
+                ],
+                output='screen',
+                # rviz
+                # launch_ros.actions.Node(
+                # package='rviz2', node_executable='rviz2', output='screen',
+                # arguments=['--display-config', default_rviz]),
             ),
-            # launch plugin through rclcpp_components container
-            # launch_ros.actions.ComposableNodeContainer(
-            #     name='lane',
-            #     namespace='',
-            #     package='rclcpp_components',
-            #     executable='component_container',
-            #     composable_node_descriptions=[
-            #         # Driver itself
-            #         launch_ros.descriptions.ComposableNode(
-            #             package='depth_image_proc',
-            #             plugin='depth_image_proc::PointCloudXyzNode',
-            #             name='point_cloud_xyz_node',
-            #             remappings=[
-            #                 ('image_rect', '/lane_depth'),
-            #                 ('camera_info', '/cov_info'),
-            #                 ('image', '/camera/color/image_raw'),
-            #                 ('/points', '/lane_points'),
-            #             ],
-            #         ),
-            #     ],
-            #     output='screen',
-            # ),
-            # rviz
-            # launch_ros.actions.Node(
-            # package='rviz2', node_executable='rviz2', output='screen',
-            # arguments=['--display-config', default_rviz]),
         ]
     )
