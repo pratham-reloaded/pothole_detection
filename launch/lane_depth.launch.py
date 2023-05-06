@@ -31,7 +31,7 @@ def generate_launch_description():
                     launch_ros.descriptions.ComposableNode(
                         package='depth_image_proc',
                         plugin='depth_image_proc::PointCloudXyzNode',
-                        name='point_cloud_xyz_node',
+                        name='point_cloud_lane',
                         remappings=[
                             ('image_rect', '/lane_depth'),
                             ('camera_info', '/cov_info'),
