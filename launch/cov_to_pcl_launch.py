@@ -8,11 +8,11 @@ import launch_ros.descriptions
 
 
 def generate_launch_description():
-    default_rviz = os.path.join(
-        get_package_share_directory('depth_image_proc'),
-        'launch',
-        'rviz/point_cloud_xyz.rviz',
-    )
+    # default_rviz = os.path.join(
+    #     get_package_share_directory('depth_image_proc'),
+    #     'launch',
+    #     'rviz/point_cloud_xyz.rviz',
+    # )
     return LaunchDescription(
         [
             # install realsense from https://github.com/intel/ros2_intel_realsense
