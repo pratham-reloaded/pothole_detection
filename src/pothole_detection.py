@@ -22,23 +22,33 @@ class imageSubscriber(Node):
         # self.pothole_depth = np.zeros([720,1280], np.uint16)
 
         self.color_sub = self.create_subscription(
-            Image, '/intel_realsense_r200_depth/image_raw', self.color_callback, 10
+            Image, '/camera/color/image_raw', self.color_callback, 10
         )   # '/camera/color/image_raw'
 
         self.depth_sub = self.create_subscription(
-            Image, '/intel_realsense_r200_depth/depth/image_raw', self.depth_callback, 10
+            Image,
+            '/camera/depth/image_rect_raw',
+            self.depth_callback,
+            10,
         )   # 'camera/depth/image_rect_raw'
 
         self.info_sub = self.create_subscription(
-            CameraInfo, '/intel_realsense_r200_depth/camera_info', self.info_callback, 10
+            CameraInfo,
+            '/camera/depth/camera_info',
+            self.info_callback,
+            10,
         )   # '/camera/depth/camera_info'
 
         self.br = CvBridge()
         self.camera_info_pub = self.create_publisher(
             CameraInfo, '/cov_info', 10
         )
-        self.pothole_depth_publisher = self.create_publisher(Image, 'pothole_depth', 10)        # origianlly 'output_depth
-        self.lane_depth_publisher = self.create_publisher(Image, 'lane_depth', 10)
+        self.pothole_depth_publisher = self.create_publisher(
+            Image, 'pothole_depth', 10
+        )        # origianlly 'output_depth
+        self.lane_depth_publisher = self.create_publisher(
+            Image, 'lane_depth', 10
+        )
 
         # self.new_depth_publisher = self.create_publisher(
         #     Image,
@@ -58,13 +68,13 @@ class imageSubscriber(Node):
 
         # self.new_output_depth_image = np.zeros((720,1280), np.uint16)
 
-        self.depth_image = np.zeros((720,1280), np.uint16)
+        self.depth_image = np.zeros((720, 1280), np.uint16)
         # self.rgbd_image = None
         self.camera_info = CameraInfo()
 
-        self.pothole_depth = np.zeros((720,1280), np.uint16)
-        self.lanes = np.zeros((720,1280), dtype="uint8")
-        self.lane_depth = np.zeros((720,1280), np.uint16)
+        self.pothole_depth = np.zeros((720, 1280), np.uint16)
+        self.lanes = np.zeros((720, 1280), dtype='uint8')
+        self.lane_depth = np.zeros((720, 1280), np.uint16)
 
     def info_callback(self, data):
         self.get_logger().info('Receiving camera info')
@@ -89,7 +99,7 @@ class imageSubscriber(Node):
         self.pothole_depth_publisher.publish(pothole_depth_image)
         self.lane_depth_publisher.publish(lane_depth_image)
         self.camera_info_pub.publish(self.camera_info)
-        
+
         # self.new_depth_publisher.publish(
         #     self.br.cv2_to_imgmsg(self.pothole_depth)
         # )
@@ -149,7 +159,7 @@ class imageSubscriber(Node):
         # --------------------------------- rectangular region of interest ------------------------------------------------
 
         self.mask = np.zeros(self.hsv_color_mask.shape[:2], dtype='uint8')
-        cv2.rectangle(self.mask, (0, 500), (1280,720), (255, 0, 0), -1)
+        cv2.rectangle(self.mask, (0, 500), (1280, 720), (255, 0, 0), -1)
 
         self.masked_image = cv2.bitwise_and(
             self.hsv_color_mask, self.mask
@@ -165,27 +175,31 @@ class imageSubscriber(Node):
         # self.blur = cv2.GaussianBlur(self.masked_image, (3, 3), 0)
 
         # ---------------------------------- Part 1: Everything ----------------------------------------------------------------
-        
-        self.blurred = cv2.GaussianBlur(self.color_image, (11,11),0)
-        
+
+        self.blurred = cv2.GaussianBlur(self.color_image, (11, 11), 0)
+
         self.gray = cv2.cvtColor(self.blurred, cv2.COLOR_RGB2GRAY)
-        
-        ret, self.foreground = cv2.threshold(self.gray, 180, 200, cv2.THRESH_BINARY)
-         
-        self.se = cv2.getStructuringElement(cv2.MORPH_RECT , (11,11))
+
+        ret, self.foreground = cv2.threshold(
+            self.gray, 180, 200, cv2.THRESH_BINARY
+        )
+
+        self.se = cv2.getStructuringElement(cv2.MORPH_RECT, (11, 11))
 
         self.bg = cv2.morphologyEx(self.foreground, cv2.MORPH_DILATE, self.se)
-        
-        self.out_gray = cv2.divide(self.foreground, self.bg, scale=255)
-        
-        self.out_binary = cv2.threshold(self.out_gray, 180, 255, cv2.THRESH_OTSU )[1]
 
-        cv2.imshow("Binary of Everything", self.out_binary)
+        self.out_gray = cv2.divide(self.foreground, self.bg, scale=255)
+
+        self.out_binary = cv2.threshold(
+            self.out_gray, 180, 255, cv2.THRESH_OTSU
+        )[1]
+
+        cv2.imshow('Binary of Everything', self.out_binary)
 
         # ------------------------------------------------------------------------------------------------------------------
-        
+
         # ----------------------------------- Part 2: Potholes -------------------------------------------------------------
-        
+
         # # Additional pothole mask : This is used to remove pothole artifacts for far away potholes : FAILED IN TESTING
         # self.additional_pothole_mask = np.zeros(self.out_binary.shape[:2], dtype='uint8')
         # cv2.rectangle(self.additional_pothole_mask, (0, 580), (1280,720), (255, 0, 0), -1)
@@ -212,7 +226,9 @@ class imageSubscriber(Node):
         )
 
         # cnts = imutils.grab_contours(contours)
-        self.cnts = sorted(self.contours, key=cv2.contourArea, reverse=True)[:5]
+        self.cnts = sorted(self.contours, key=cv2.contourArea, reverse=True)[
+            :5
+        ]
 
         self.image_copy = self.color_image.copy()
 
@@ -224,10 +240,10 @@ class imageSubscriber(Node):
 
         # ----------------------------------- bitwise_and on depth image with pothole mask ---------------------------
 
-        self.potholes = np.zeros((720,1280), dtype='uint8')
-        self.pothole_depth = np.zeros((720,1280), np.uint16)
-        self.lanes = np.zeros((720,1280), dtype="uint8")
-        self.lane_depth = np.zeros((720,1280), np.uint16)
+        self.potholes = np.zeros((720, 1280), dtype='uint8')
+        self.pothole_depth = np.zeros((720, 1280), np.uint16)
+        self.lanes = np.zeros((720, 1280), dtype='uint8')
+        self.lane_depth = np.zeros((720, 1280), np.uint16)
 
         for contour in self.cnts:
 
@@ -250,17 +266,18 @@ class imageSubscriber(Node):
                 # print(self.new_output_depth_image.dtype,"\n",self.potholes.dtype)
                 # print("\n", type(self.new_output_depth_image), "\n", type(self.potholes))
 
-                
         # General Erosion Kernel
         self.erosion_kernel = np.ones((3, 3), np.uint8)
 
         # Erosion of the pothole image to remove any background artifacts that come up
-        self.eroded_pothole = cv2.erode(self.potholes, self.erosion_kernel, iterations=1)
-        cv2.imshow("Potholes eroded",self.eroded_pothole)
+        self.eroded_pothole = cv2.erode(
+            self.potholes, self.erosion_kernel, iterations=1
+        )
+        cv2.imshow('Potholes eroded', self.eroded_pothole)
 
         self.pothole_depth = cv2.bitwise_and(
             self.depth_image, self.depth_image, mask=self.eroded_pothole
-            )
+        )
         print('Pothole Depth Published\n')
 
         # cv2.imshow('potholes', self.potholes)
@@ -268,32 +285,40 @@ class imageSubscriber(Node):
         # -------------------------------------------- Part3 : Lanes ---------------------------------------------
 
         self.xor_out = cv2.bitwise_xor(self.out_binary, self.potholes)
-        cv2.imshow("XOR output", self.xor_out)
+        cv2.imshow('XOR output', self.xor_out)
 
         # self.erosion_kernel = np.ones((3, 3), np.uint8)
-        self.eroded_xor_out = cv2.erode(self.xor_out, self.erosion_kernel, iterations=1)
+        self.eroded_xor_out = cv2.erode(
+            self.xor_out, self.erosion_kernel, iterations=1
+        )
         # cv2.imshow("Eroded XOR Output", self.eroded_xor_out)
 
         # finding and removing artefacts
 
-        self.contours_2, self.hierarchy_2 = cv2.findContours(self.eroded_xor_out, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+        self.contours_2, self.hierarchy_2 = cv2.findContours(
+            self.eroded_xor_out, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE
+        )
         # cv2.imshow("contours_2", self.contours_2)
         for contour in self.contours_2:
             self.area = cv2.contourArea(contour)
-            if (self.area > 2000 and self.area < 8000):
+            if self.area > 2000 and self.area < 8000:
                 # Tune the above parameters according to real world testing
-                print(self.area, "\n")
-                self.lanes = cv2.fillPoly(self.lanes, pts = [contour], color =(255,255,255))
-        
-        print("Lanes Found")
-        cv2.imshow("lanes", self.lanes)
+                print(self.area, '\n')
+                self.lanes = cv2.fillPoly(
+                    self.lanes, pts=[contour], color=(255, 255, 255)
+                )
 
-        self.lane_depth = cv2.bitwise_and(self.depth_image, self.depth_image, mask=self.lanes)
-        print("Lane Depth Published\n")
+        print('Lanes Found')
+        cv2.imshow('lanes', self.lanes)
+
+        self.lane_depth = cv2.bitwise_and(
+            self.depth_image, self.depth_image, mask=self.lanes
+        )
+        print('Lane Depth Published\n')
         # --------------------------------------------------------------------------------------------------------
 
         cv2.waitKey(1)
-        
+
 
 def main(args=None):
 
