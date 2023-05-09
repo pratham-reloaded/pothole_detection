@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
 
-# Integration with ROS2 for testing in gazebo simulation
-
 import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import Image, CameraInfo, PointCloud2
@@ -138,13 +136,13 @@ class imageSubscriber(Node):
 
         # --------------------------------- Color Filtering -------------------------------------------------------------
 
-        self.hsv = cv2.cvtColor(self.color_image, cv2.COLOR_RGB2HSV)
+        self.hsv = cv2.cvtColor(self.color_image, cv2.COLOR_BGR2HSV)
 
-        self.lower_white_hsv = (0, 0, 191)         # 0,0,200          0,0,168
+        self.lower_white_hsv = (80, 0, 0)         # 0,0,200          0,0,168
         self.upper_white_hsv = (
             179,
             255,
-            255,
+            90,
         )     # 145,60,255       172,111,255
 
         self.hsv_color_mask = cv2.inRange(
@@ -177,13 +175,13 @@ class imageSubscriber(Node):
         # self.blur = cv2.GaussianBlur(self.masked_image, (3, 3), 0)
 
         # ---------------------------------- Part 1: Everything ----------------------------------------------------------------
-
-        self.blurred = cv2.GaussianBlur(self.masked_image, (11, 11), 0)
+        # self.masked_image = cv2.cvtColor(self.masked_image, cv2.COLOR_HSV2RGB)
+        self.blurred = cv2.GaussianBlur(self.color_image, (11, 11), 0)
 
         self.gray = cv2.cvtColor(self.blurred, cv2.COLOR_RGB2GRAY)
 
         ret, self.foreground = cv2.threshold(
-            self.gray, 180, 200, cv2.THRESH_BINARY
+            self.gray, 180, 200, cv2.THRESH_OTSU
         )
 
         self.se = cv2.getStructuringElement(cv2.MORPH_RECT, (11, 11))
@@ -288,12 +286,12 @@ class imageSubscriber(Node):
 
         self.xor_out = cv2.bitwise_xor(self.out_binary, self.potholes)
         cv2.imshow('XOR output', self.xor_out)
-
+        self.not_out = cv2.bitwise_not(self.out_binary)
         # self.erosion_kernel = np.ones((3, 3), np.uint8)
         self.eroded_xor_out = cv2.erode(
             self.xor_out, self.erosion_kernel, iterations=1
         )
-        # cv2.imshow("Eroded XOR Output", self.eroded_xor_out)
+        cv2.imshow('nor out', self.not_out)
 
         # finding and removing artefacts
 
@@ -312,9 +310,10 @@ class imageSubscriber(Node):
 
         print('Lanes Found')
         cv2.imshow('lanes', self.lanes)
+        self.not_out[0:300, :] = 0
 
         self.lane_depth = cv2.bitwise_and(
-            self.depth_image, self.depth_image, mask=self.lanes
+            self.depth_image, self.depth_image, mask=self.not_out
         )
         print('Lane Depth Published\n')
         # --------------------------------------------------------------------------------------------------------
@@ -333,3 +332,5 @@ def main(args=None):
 
 if __name__ == '__main__':
     main()
+
+# Integration with ROS2 for testing in gazebo simulation
