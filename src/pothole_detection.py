@@ -140,19 +140,21 @@ class imageSubscriber(Node):
 
         self.hsv = cv2.cvtColor(self.color_image, cv2.COLOR_RGB2HSV)
 
-        self.lower_white_hsv = (0, 0, 168)         # 0,0,200          0,0,168
+        self.lower_white_hsv = (0, 0, 191)         # 0,0,200          0,0,168
         self.upper_white_hsv = (
-            172,
-            111,
+            179,
+            255,
             255,
         )     # 145,60,255       172,111,255
 
         self.hsv_color_mask = cv2.inRange(
             self.hsv, self.lower_white_hsv, self.upper_white_hsv
         )
-        # self.hsv_mask = cv2.bitwise_and(self.color_image, self.color_image, mask = self.hsv_color_mask)
+        self.hsv_mask = cv2.bitwise_and(
+            self.color_image, self.color_image, mask=self.hsv_color_mask
+        )
 
-        # cv2.imshow("hsv", self.hsv_color_mask)
+        cv2.imshow('hsv', self.hsv_color_mask)
 
         # --------------------------------------------------------------------------------------------------------------
 
@@ -176,7 +178,7 @@ class imageSubscriber(Node):
 
         # ---------------------------------- Part 1: Everything ----------------------------------------------------------------
 
-        self.blurred = cv2.GaussianBlur(self.color_image, (11, 11), 0)
+        self.blurred = cv2.GaussianBlur(self.masked_image, (11, 11), 0)
 
         self.gray = cv2.cvtColor(self.blurred, cv2.COLOR_RGB2GRAY)
 
