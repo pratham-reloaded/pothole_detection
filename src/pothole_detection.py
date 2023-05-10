@@ -138,11 +138,11 @@ class imageSubscriber(Node):
 
         self.hsv = cv2.cvtColor(self.color_image, cv2.COLOR_BGR2HSV)
 
-        self.lower_white_hsv = (80, 0, 0)         # 0,0,200          0,0,168
+        self.lower_white_hsv = (82, 0, 142)         # 0,0,200          0,0,168
         self.upper_white_hsv = (
             179,
             255,
-            90,
+            255,
         )     # 145,60,255       172,111,255
 
         # self.hsv_color_mask = cv2.inRange(
